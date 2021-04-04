@@ -1,0 +1,53 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  cargo-deny:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        checks:
+          - advisories
+          - bans sources
+
+    # Prevent sudden announcement of a new advisory from failing ci:
+    continue-on-error: ${{ matrix.checks == 'advisories' }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: EmbarkStudios/cargo-deny-action@v1
+      with:
+        command: check ${{ matrix.checks }}
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    # - name: Access Docker
+    #   env:
+    #     DOCKER_USER:  ${{secrets.DOCKER_USER}}
+    #     DOCKER_ACCESS_KEY:  ${{secrets.DOCKER_ACCESS_KEY}}  
+    - name: Runing Test
+      run: | 
+              cargo test
+
+    - name: Code Coverage
+      run: | 
+              cargo install cargo-tarpaulin && cargo tarpaulin --ignore-tests
+    - name: Code Audit
+      run: | 
+              cargo install cargo-audit && cargo audit
+
+    # - name: Building Docker Image
+    #   run: |
+    #           docker login -u $DOCKER_USER -p $DOCKER_ACCESS_KEY
+    # - name: Build the Docker image
+    #   run: |
+    #           docker build . -t thewestdevop/devoye_todo_services
+    # - name: Pushing the Docker image
+    #   run: |
+    #           docker push thewestdevop/devoye_todo_services
