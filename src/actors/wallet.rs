@@ -1,14 +1,10 @@
-use crate::actix::{Actor, Handler, Message, SyncContext};
+use crate::actix::{ Handler, Message};
 use crate::diesel::prelude::*;
 use crate::models::wallet::*;
-use crate::schema::wallets::dsl::{wallet_address, public_key, private_key, amount, wallet_value, wallets};
+use crate::schema::wallets::dsl::{wallet_address, public_key, private_key, amount,  wallets};
+use crate::actors::db::DBActor;
 
-use diesel::{
-    r2d2::{ConnectionManager, Pool},
-    PgConnection,
-};
 
-pub struct DbActor(pub Pool<ConnectionManager<PgConnection>>);
 
 #[derive(Message)]
 #[rtype(result = "QueryResult<Wallet>")]
@@ -50,6 +46,17 @@ impl Get {
         Get { user_wallet_address, user_public_key, user_private_key  }
     }
 }
+#[derive(Message)]
+#[rtype(result = "QueryResult<Wallet>")]
+pub struct GetByWallet {
+    pub user_wallet_address: String,
+
+}
+impl GetByWallet {
+    pub fn this( user_wallet_address: String) -> GetByWallet {
+        GetByWallet { user_wallet_address }
+    }
+}
 
 #[derive(Message)]
 #[rtype(result = "QueryResult<Wallet>")]
@@ -67,14 +74,12 @@ impl Detail {
 #[rtype(result = "QueryResult<Wallet>")]
 pub struct Update {
     pub new_amount: String,
-    pub user_wallet_value: String,
     pub user_wallet_address: String
 }
 impl Update {
-    pub fn this(new_amount: String, user_wallet_value: String, user_wallet_address: String) -> Update {
+    pub fn this(new_amount: String, user_wallet_address: String) -> Update {
         Update {
             new_amount,
-            user_wallet_value,
             user_wallet_address
         }
     }
@@ -99,11 +104,9 @@ impl Delete {
 #[rtype(result = "QueryResult<Vec<Wallet>>")]
 pub struct GetAllWallets;
 
-impl Actor for DbActor {
-    type Context = SyncContext<Self>;
-}
 
-impl Handler<Create> for DbActor {
+
+impl Handler<Create> for DBActor {
     type Result = QueryResult<Wallet>;
 
     fn handle(&mut self, msg: Create, _: &mut Self::Context) -> Self::Result {
@@ -121,7 +124,7 @@ impl Handler<Create> for DbActor {
             .get_result::<Wallet>(&conn)
     }
 }
-impl Handler<Get> for DbActor {
+impl Handler<Get> for DBActor {
     type Result = QueryResult<Wallet>;
 
     fn handle(&mut self, msg: Get, _: &mut Self::Context) -> Self::Result {
@@ -136,7 +139,20 @@ impl Handler<Get> for DbActor {
     }
 }
 
-impl Handler<Detail> for DbActor {
+impl Handler<GetByWallet> for DBActor {
+    type Result = QueryResult<Wallet>;
+
+    fn handle(&mut self, msg: GetByWallet, _: &mut Self::Context) -> Self::Result {
+        let conn = self.0.get().expect("Unable to get a connection");
+
+        wallets.filter(
+            wallet_address.eq(msg.user_wallet_address)
+                    )
+            .get_result::<Wallet>(&conn)
+    }
+}
+
+impl Handler<Detail> for DBActor {
     type Result = QueryResult<Wallet>;
 
     fn handle(&mut self, msg: Detail, _: &mut Self::Context) -> Self::Result {
@@ -147,7 +163,7 @@ impl Handler<Detail> for DbActor {
     }
 }
 
-impl Handler<Update> for DbActor {
+impl Handler<Update> for DBActor {
     type Result = QueryResult<Wallet>;
 
     fn handle(&mut self, msg: Update, _: &mut Self::Context) -> Self::Result {
@@ -155,12 +171,12 @@ impl Handler<Update> for DbActor {
 
         diesel::update(wallets)
             .filter(wallet_address.eq(msg.user_wallet_address))
-            .set((amount.eq(msg.new_amount), wallet_value.eq(msg.user_wallet_value)))
+            .set(amount.eq(msg.new_amount))
             .get_result::<Wallet>(&conn)
     }
 }
 
-impl Handler<Delete> for DbActor {
+impl Handler<Delete> for DBActor {
     type Result = QueryResult<Wallet>;
 
     fn handle(&mut self, msg: Delete, _: &mut Self::Context) -> Self::Result {
@@ -172,7 +188,7 @@ impl Handler<Delete> for DbActor {
     }
 }
 
-impl Handler<GetAllWallets> for DbActor {
+impl Handler<GetAllWallets> for DBActor {
     type Result = QueryResult<Vec<Wallet>>;
 
     fn handle(&mut self, _msg: GetAllWallets, _: &mut Self::Context) -> Self::Result {

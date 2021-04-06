@@ -25,14 +25,30 @@ impl ListZarynResponse {
 pub struct ZarynResponse {
     pub status: bool,
     pub data: Option<Wallet>,
-    pub message: Option<String>,
+    pub message: String,
 }
 impl ZarynResponse {
-    pub fn success(status: bool, data:Option<Wallet>,message: Option<String>) -> HttpResponse {
+    pub fn success(status: bool, data:Option<Wallet>,message: String) -> HttpResponse {
         HttpResponse::Ok().json(
             ZarynResponse {
                 status,
                 data,
+                message,
+           }
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ZarynMessage {
+    pub status: bool,
+    pub message: String,
+}
+impl ZarynMessage {
+    pub fn success(status: bool, message: String) -> HttpResponse {
+        HttpResponse::Ok().json(
+            ZarynMessage {
+                status,
                 message,
            }
         )
@@ -55,8 +71,8 @@ struct ErrorMessage {
 }
 #[derive(Debug, Display, Error)]
 pub enum ZarynError {
-    // #[display(fmt = "Validation error on field: {}", field)]
-    // ValidationError { field: String },
+    #[display(fmt = "Message: {}", field)]
+    ValidationError { field: String },
 
     #[display(fmt = "Something went wrong, Please try again later.")]
     InternalError,
@@ -69,12 +85,18 @@ pub enum ZarynError {
 
     #[display(fmt = "Wallet not found")]
     WalletNotFound,
+
+    #[display(fmt = "Wallet doesn't have enough balance")]
+    NotEnoughBalance,
     
     #[display(fmt = "Duplicate Wallet details found, Wallet can't be created")]
     ErrorDuplicateWalletFound,
 
     #[display(fmt = "Transaction not found")]
     TransactionNotFound,
+
+    #[display(fmt = "Unable to process this transaction, try again")]
+    TransactionNotProcessed,
 
     // #[display(fmt = "auth")]
     // TokenNotFound,
@@ -88,13 +110,17 @@ impl error::ResponseError for ZarynError {
     }
     fn status_code(&self) -> StatusCode {
         match *self {
-            // ZarynError::ValidationError { .. } => StatusCode::BAD_REQUEST,
+            ZarynError::ValidationError { .. } => StatusCode::UNAUTHORIZED,
             ZarynError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
             ZarynError::BadClientData => StatusCode::BAD_REQUEST,
+            ZarynError::NotEnoughBalance => StatusCode::BAD_REQUEST,
             ZarynError::NotFound => StatusCode::NOT_FOUND,
-            ZarynError::WalletNotFound => StatusCode::NOT_FOUND,
-            ZarynError::ErrorDuplicateWalletFound => StatusCode::BAD_REQUEST,
+            
+            ZarynError::TransactionNotProcessed => StatusCode::NOT_ACCEPTABLE,
             ZarynError::TransactionNotFound => StatusCode::NOT_FOUND,
+
+            ZarynError::WalletNotFound => StatusCode::NOT_FOUND,
+            ZarynError::ErrorDuplicateWalletFound => StatusCode::NOT_ACCEPTABLE,
 
             // ZarynError::TokenNotFound => StatusCode::NON_AUTHORITATIVE_INFORMATION
         }

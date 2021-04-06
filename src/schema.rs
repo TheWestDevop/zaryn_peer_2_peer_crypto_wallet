@@ -1,13 +1,13 @@
 table! {
     transactions (id) {
         id -> Int4,
-        input_amount -> Varchar,
-        output_amount -> Varchar,
+        amount -> Varchar,
         transaction_address -> Varchar,
         sender_wallet -> Varchar,
         receiver_wallet -> Varchar,
         transaction_signature -> Varchar,
         transaction_type -> Varchar,
+        transaction_fee -> Varchar,
         transaction_status -> Varchar,
         created_at -> Timestamp,
         updated_at -> Timestamp,

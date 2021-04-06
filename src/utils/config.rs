@@ -1,4 +1,4 @@
-use crate::actors::wallet::DbActor;
+use crate::actors::db::DBActor;
 use crate::utils::db::{get_pool, run_migrations};
 use actix::{Addr, SyncArbiter};
 use dotenv::dotenv;
@@ -11,7 +11,7 @@ pub struct Bootstrap {
        pub host: String,
         pub port: String,
         pub workers: usize,
-        pub db: Addr<DbActor>,
+        pub db: Addr<DBActor>,
     
 }
 
@@ -28,7 +28,7 @@ pub async fn boot() -> Bootstrap {
     let db_url = env::var("DATABASE_URL").expect("Error retrieving the database url");
     run_migrations(&db_url);
     let pool = get_pool(&db_url);
-    let db = SyncArbiter::start(env_value.3, move || DbActor(pool.clone()));
+    let db = SyncArbiter::start(env_value.3, move || DBActor(pool.clone()));
 
     Bootstrap {
         host: env_value.0,

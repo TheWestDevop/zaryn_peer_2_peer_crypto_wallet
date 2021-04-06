@@ -4,17 +4,20 @@ extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
 
+
 mod actors;
 mod middleware;
 mod models;
 mod routes;
 mod schema;
 mod utils;
+mod controllers;
 
 use actix_web::{App, HttpServer,  middleware::{Logger}, web};
 
 use models::state::AppState;
-use routes::wallet:: { get_wallets, create_wallet, update_wallet,  delete_wallet};
+use routes::wallet:: { get_wallets, create_wallet, delete_wallet};
+use routes::transactions:: { get_transactions, get_wallet_transactions, get_transaction_info  };
 use routes::routes_state::*;
 use tracing::instrument;
 use utils::{config::boot};
@@ -31,11 +34,15 @@ async fn main() -> std::io::Result<()> {
             
             .service(health)
             .service(
-                web::scope("/wallets")
+                web::scope("/wallet")
                     .service(get_wallets)
                     .service(create_wallet)
-                    .service(update_wallet)
                     .service(delete_wallet),
+            ).service(
+                web::scope("/transaction")
+                    .service(get_transactions)
+                    .service(get_wallet_transactions)
+                    .service(get_transaction_info),
             )
             .default_service(
                 web::route().to(route_not_found), //
