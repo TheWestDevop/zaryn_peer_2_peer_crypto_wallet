@@ -20,3 +20,4 @@ tracing = "0.1"
 tracing-futures = "0.2"
 tracing-log = { version = "0.1", features = ["env_logger"] }
 tracing-subscriber = "0.2"
+rustler = "0.21.1"
