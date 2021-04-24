@@ -21,3 +21,5 @@ tracing-futures = "0.2"
 tracing-log = { version = "0.1", features = ["env_logger"] }
 tracing-subscriber = "0.2"
 float-ord = "0.3.0"
+blake2 = "0.9.1"
+rustc-serialize = "0.3.24"

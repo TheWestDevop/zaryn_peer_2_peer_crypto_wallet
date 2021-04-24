@@ -4,6 +4,7 @@ use crate::schema::wallets;
 use chrono::NaiveDateTime;
 
 
+
 #[derive(Debug, Clone, Queryable, Serialize, Deserialize)]
 pub struct Wallet {
     pub id: i32,

@@ -95,9 +95,9 @@ impl Handler<CreateTransaction> for DBActor {
             msg.x_receiver_wallet,
             msg.x_transaction_address,
             msg.x_transaction_signature,
-            msg.x_transaction_status,
             msg.x_transaction_type,
             msg.x_transaction_fee,
+            msg.x_transaction_status,
         );
 
         diesel::insert_into(transactions)
@@ -123,7 +123,7 @@ impl Handler<GetAllWalletTransactions> for DBActor {
         let conn = self.0.get().expect("Unable to get a connection");
 
         transactions
-            .filter(sender_wallet.eq(msg.wallet_address))
+            .filter(sender_wallet.eq(msg.wallet_address.clone()).or(receiver_wallet.eq(msg.wallet_address)))
             .get_results::<Transaction>(&conn)
     }
 }
