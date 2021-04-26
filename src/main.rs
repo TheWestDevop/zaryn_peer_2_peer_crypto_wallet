@@ -16,9 +16,8 @@ mod utils;
 mod controllers;
 
 use actix_web::{App, HttpServer,  middleware::{Logger}, web};
-
 use models::state::AppState;
-use routes::wallet:: { get_wallets, create_wallet, update_wallet, delete_wallet};
+use routes::wallet:: { get_wallets, create_wallet, update_wallet, get_wallet_info, delete_wallet};
 use routes::transactions:: { get_transactions, get_wallet_transactions, get_transaction_info  };
 use routes::routes_state::*;
 use tracing::instrument;
@@ -33,16 +32,16 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .wrap(Logger::new("%a %{authorization}i"))
-            
             .service(health)
             .service(
-                web::scope("/wallet")
+                web::scope("/v1/wallet")
                     .service(get_wallets)
+                    .service(get_wallet_info)
                     .service(create_wallet)
                     .service(update_wallet)
                     .service(delete_wallet),
             ).service(
-                web::scope("/transaction")
+                web::scope("/v1/transaction")
                     .service(get_transactions)
                     .service(get_wallet_transactions)
                     .service(get_transaction_info),

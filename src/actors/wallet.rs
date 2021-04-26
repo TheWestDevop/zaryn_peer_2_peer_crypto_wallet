@@ -1,7 +1,7 @@
 use crate::actix::{ Handler, Message};
 use crate::diesel::prelude::*;
 use crate::models::wallet::*;
-use crate::schema::wallets::dsl::{wallet_address, public_key, private_key, amount,  wallets};
+use crate::schema::wallets::dsl::{id,wallet_address, public_key, private_key, amount,  wallets};
 use crate::actors::db::DBActor;
 
 
@@ -148,6 +148,7 @@ impl Handler<GetByWallet> for DBActor {
         wallets.filter(
             wallet_address.eq(msg.user_wallet_address)
                     )
+            .order(id.desc())
             .get_result::<Wallet>(&conn)
     }
 }
@@ -193,6 +194,7 @@ impl Handler<GetAllWallets> for DBActor {
 
     fn handle(&mut self, _msg: GetAllWallets, _: &mut Self::Context) -> Self::Result {
         let conn = self.0.get().expect("Unable to get a connection");
-        wallets.get_results::<Wallet>(&conn)
+            
+            wallets.order(id.desc()).get_results::<Wallet>(&conn)
     }
 }

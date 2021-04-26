@@ -10,7 +10,7 @@ pub async fn route_not_found() -> Result<HttpResponse, ZarynError> {
 
 
 
-#[get("/health")]
+#[get("/v1/health")]
 #[instrument]
 pub async fn health() -> HttpResponse {
     ZarynMessage::success(true, "I'm feeling Good".to_string())

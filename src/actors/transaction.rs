@@ -124,6 +124,7 @@ impl Handler<GetAllWalletTransactions> for DBActor {
 
         transactions
             .filter(sender_wallet.eq(msg.wallet_address.clone()).or(receiver_wallet.eq(msg.wallet_address)))
+            .order(id.desc())
             .get_results::<Transaction>(&conn)
     }
 }
@@ -144,6 +145,6 @@ impl Handler<GetAllTransactions> for DBActor {
 
     fn handle(&mut self, _msg: GetAllTransactions, _: &mut Self::Context) -> Self::Result {
         let conn = self.0.get().expect("Unable to get a connection");
-        transactions.get_results::<Transaction>(&conn)
+        transactions.order(id.desc()).get_results::<Transaction>(&conn)
     }
 }

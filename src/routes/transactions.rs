@@ -56,7 +56,7 @@ pub async fn get_wallet_transactions(Path(wallet_address): Path<String>, state: 
     }
 }
 
-#[get("/{transaction_address}")]
+#[get("/info/{transaction_address}")]
 pub async fn get_transaction_info(Path(transaction_address): Path<String>, state: Data<AppState>) -> Result<HttpResponse, ZarynError> {
     let db = state.as_ref().db.clone();
 

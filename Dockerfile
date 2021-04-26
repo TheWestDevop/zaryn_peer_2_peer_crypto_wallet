@@ -1,4 +1,4 @@
-FROM rustlang/rust:nightly as builder
+FROM ekidd/rust-musl-builder:stable as builder
 
 WORKDIR /zaryn_p2p
 
@@ -30,3 +30,4 @@ COPY --from=builder /zaryn_p2p/.env .
 
 
 ENTRYPOINT [ "/zaryn_p2p/zaryn_p2p" ]
+

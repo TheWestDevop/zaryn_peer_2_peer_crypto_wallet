@@ -31,9 +31,9 @@ jobs:
     #   env:
     #     DOCKER_USER:  ${{secrets.DOCKER_USER}}
     #     DOCKER_ACCESS_KEY:  ${{secrets.DOCKER_ACCESS_KEY}}  
-    - name: Runing Test
-      run: | 
-              cargo test
+    # - name: Runing Test
+    #   run: | 
+    #           cargo test
 
     - name: Code Coverage
       run: | 
@@ -47,7 +47,7 @@ jobs:
     #           docker login -u $DOCKER_USER -p $DOCKER_ACCESS_KEY
     # - name: Build the Docker image
     #   run: |
-    #           docker build . -t thewestdevop/devoye_todo_services
+    #           docker build . -t thewestdevop/devoye_zaryn_service
     # - name: Pushing the Docker image
     #   run: |
-    #           docker push thewestdevop/devoye_todo_services
+    #           docker push thewestdevop/devoye_zaryn_service

@@ -57,7 +57,7 @@ pub async fn create_wallet(wallet_info: Json<WalletInfo>, state: Data<AppState>)
      
 }
 
-#[get("/{public_key}")]
+#[get("/info/{public_key}")]
 pub async fn get_wallet_info(Path(public_key): Path<String>, state: Data<AppState>) -> Result<HttpResponse, ZarynError> {
     let db = state.as_ref().db.clone();
 
