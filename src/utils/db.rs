@@ -4,7 +4,8 @@ use diesel::{
     PgConnection,
 };
 
-pub fn run_migrations(db_url: &str) {
+
+pub  fn run_migrations(db_url: &str) {
     embed_migrations!();
     let connection = PgConnection::establish(db_url).expect("Error connecting to database");
     embedded_migrations::run_with_output(&connection, &mut std::io::stdout())

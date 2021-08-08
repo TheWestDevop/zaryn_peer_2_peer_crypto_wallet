@@ -87,8 +87,11 @@ pub struct GetAllTransactions;
 impl Handler<CreateTransaction> for DBActor {
     type Result = QueryResult<Transaction>;
 
+    // fn restarting(&mut self, ctx: &mut <Self as Actor>::Context) { 
+
+    //  }
+
     fn handle(&mut self, msg: CreateTransaction, _: &mut Self::Context) -> Self::Result {
-        let conn = self.0.get().expect("Unable to get a connection");
         let new_transaction = NewTransaction::new(
             msg.x_amount,
             msg.x_sender_wallet,
@@ -100,51 +103,63 @@ impl Handler<CreateTransaction> for DBActor {
             msg.x_transaction_status,
         );
 
-        diesel::insert_into(transactions)
-            .values(new_transaction)
-            .get_result::<Transaction>(&conn)
+            match self.0.get() {
+                Ok(result) => diesel::insert_into(transactions)
+                .values(new_transaction)
+                .get_result::<Transaction>(&result),
+                _ => Err(diesel::result::Error::RollbackTransaction)
+            }
     }
 }
 impl Handler<GetTransaction> for DBActor {
     type Result = QueryResult<Transaction>;
 
     fn handle(&mut self, msg: GetTransaction, _: &mut Self::Context) -> Self::Result {
-        let conn = self.0.get().expect("Unable to get a connection");
-
-        transactions
-            .filter(transaction_address.eq(msg.x_transaction_address))
-            .get_result::<Transaction>(&conn)
+        
+            match self.0.get() {
+                Ok(result) => transactions
+                .filter(transaction_address.eq(msg.x_transaction_address))
+                .get_result::<Transaction>(&result),
+                _ => Err(diesel::result::Error::RollbackTransaction)
+            }
     }
 }
 impl Handler<GetAllWalletTransactions> for DBActor {
     type Result = QueryResult<Vec<Transaction>>;
 
     fn handle(&mut self, msg: GetAllWalletTransactions, _: &mut Self::Context) -> Self::Result {
-        let conn = self.0.get().expect("Unable to get a connection");
 
-        transactions
-            .filter(sender_wallet.eq(msg.wallet_address.clone()).or(receiver_wallet.eq(msg.wallet_address)))
-            .order(id.desc())
-            .get_results::<Transaction>(&conn)
+            match self.0.get() {
+                Ok(result) => transactions
+                .filter(sender_wallet.eq(msg.wallet_address.clone()).or(receiver_wallet.eq(msg.wallet_address)))
+                .order(id.desc())
+                .get_results::<Transaction>(&result),
+                _ => Err(diesel::result::Error::RollbackTransaction)
+            }
     }
 }
 impl Handler<UpdateTransaction> for DBActor {
     type Result = QueryResult<Transaction>;
 
     fn handle(&mut self, msg: UpdateTransaction, _: &mut Self::Context) -> Self::Result {
-        let conn = self.0.get().expect("Unable to get a connection");
-
-        diesel::update(transactions)
-            .filter(transaction_signature.eq(msg.x_transaction_signature))
-            .set(transaction_status.eq(msg.x_transaction_status))
-            .get_result::<Transaction>(&conn)
+        
+            match self.0.get() {
+                Ok(result) => diesel::update(transactions)
+                .filter(transaction_signature.eq(msg.x_transaction_signature))
+                .set(transaction_status.eq(msg.x_transaction_status))
+                .get_result::<Transaction>(&result),
+                _ => Err(diesel::result::Error::RollbackTransaction)
+            }
     }
 }
 impl Handler<GetAllTransactions> for DBActor {
     type Result = QueryResult<Vec<Transaction>>;
 
     fn handle(&mut self, _msg: GetAllTransactions, _: &mut Self::Context) -> Self::Result {
-        let conn = self.0.get().expect("Unable to get a connection");
-        transactions.order(id.desc()).get_results::<Transaction>(&conn)
+        match self.0.get() {
+            Ok(result) => transactions.order(id.desc()).get_results::<Transaction>(&result),
+            _ => Err(diesel::result::Error::RollbackTransaction)
+        }
+        
     }
 }

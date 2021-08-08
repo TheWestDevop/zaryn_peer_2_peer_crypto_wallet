@@ -1,18 +1,19 @@
-use crate::models::wallet::Wallet;
+use crate::models::{wallet::Wallet,stake::Stake};
+
 use serde::{Serialize, Deserialize};
 use actix_web::{HttpResponse,  dev::HttpResponseBuilder, error, http::StatusCode};
 use derive_more::{Display, Error};
 
 #[derive(Serialize, Deserialize)]
-pub struct ListZarynResponse {
+pub struct ListZarynWalletResponse {
     pub status: bool,
     pub data: Option<Vec<Wallet>>,
     pub message: Option<String>,
 }
-impl ListZarynResponse {
+impl ListZarynWalletResponse {
     pub fn success(status: bool, data:Option<Vec<Wallet>>,message: Option<String>) -> HttpResponse { 
        HttpResponse::Ok().json(
-            ListZarynResponse {
+            ListZarynWalletResponse {
                 status,
                 data,
                 message,
@@ -22,15 +23,51 @@ impl ListZarynResponse {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct ZarynResponse {
+pub struct ZarynWalletResponse {
     pub status: bool,
     pub data: Option<Wallet>,
     pub message: String,
 }
-impl ZarynResponse {
+impl ZarynWalletResponse {
     pub fn success(status: bool, data:Option<Wallet>,message: String) -> HttpResponse {
         HttpResponse::Ok().json(
-            ZarynResponse {
+            ZarynWalletResponse {
+                status,
+                data,
+                message,
+           }
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ListZarynStakeResponse {
+    pub status: bool,
+    pub data: Option<Vec<Stake>>,
+    pub message: Option<String>,
+}
+impl ListZarynStakeResponse {
+    pub fn success(status: bool, data:Option<Vec<Stake>>,message: Option<String>) -> HttpResponse { 
+       HttpResponse::Ok().json(
+            ListZarynStakeResponse {
+                status,
+                data,
+                message,
+           }
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ZarynStakeResponse {
+    pub status: bool,
+    pub data: Option<Stake>,
+    pub message: String,
+}
+impl ZarynStakeResponse {
+    pub fn success(status: bool, data:Option<Stake>,message: String) -> HttpResponse {
+        HttpResponse::Ok().json(
+            ZarynStakeResponse {
                 status,
                 data,
                 message,
@@ -77,20 +114,25 @@ pub enum ZarynError {
     #[display(fmt = "Something went wrong, Please try again later.")]
     InternalError,
 
-    #[display(fmt = "You sent a bad request")]
-    BadClientData,
 
     #[display(fmt = "url not found, check your input again")]
     NotFound,
 
-    #[display(fmt = "Wallet not found")]
+    #[display(fmt = "wallet not found, check your input again")]
     WalletNotFound,
+
+    #[display(fmt = "stake not found, check your input again")]
+    StakeNotFound,
 
     #[display(fmt = "Wallet doesn't have enough balance")]
     NotEnoughBalance,
     
     #[display(fmt = "Duplicate Wallet details found, Wallet can't be created")]
     ErrorDuplicateWalletFound,
+   
+    #[display(fmt = "Duplicate stake  transaction details found, Unable to process this transaction")]
+    ErrorDuplicateStakeTransactionFound,
+
 
     #[display(fmt = "Transaction not found")]
     TransactionNotFound,
@@ -112,15 +154,18 @@ impl error::ResponseError for ZarynError {
         match *self {
             ZarynError::ValidationError { .. } => StatusCode::UNAUTHORIZED,
             ZarynError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-            ZarynError::BadClientData => StatusCode::BAD_REQUEST,
             ZarynError::NotEnoughBalance => StatusCode::BAD_REQUEST,
             ZarynError::NotFound => StatusCode::NOT_FOUND,
+            ZarynError::StakeNotFound => StatusCode::NOT_FOUND,
+
+
             
             ZarynError::TransactionNotProcessed => StatusCode::NOT_ACCEPTABLE,
             ZarynError::TransactionNotFound => StatusCode::NOT_FOUND,
 
             ZarynError::WalletNotFound => StatusCode::NOT_FOUND,
             ZarynError::ErrorDuplicateWalletFound => StatusCode::NOT_ACCEPTABLE,
+            ZarynError::ErrorDuplicateStakeTransactionFound => StatusCode::NOT_ACCEPTABLE,
 
             // ZarynError::TokenNotFound => StatusCode::NON_AUTHORITATIVE_INFORMATION
         }

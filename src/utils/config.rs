@@ -1,9 +1,11 @@
-use crate::actors::db::DBActor;
+use crate::actors::{db::DBActor,wallet::Create};
 use crate::utils::db::{get_pool, run_migrations};
+
 use actix::{Addr, SyncArbiter};
 use dotenv::dotenv;
 use std::env;
 use tracing_subscriber::EnvFilter;
+
 
 #[derive(Clone)]
 pub struct Bootstrap {
@@ -29,6 +31,16 @@ pub async fn boot() -> Bootstrap {
     run_migrations(&db_url);
     let pool = get_pool(&db_url);
     let db = SyncArbiter::start(env_value.3, move || DBActor(pool.clone()));
+
+    db.do_send(
+        Create::this(
+        "Zaryn_Staking_Pool".to_string(),
+        "bbca5c9bbc07281bf78a1f4ee5c01925ea5494d98cbe5f9cda91d569cc521fa7".to_string(),
+        "0b72eb362544561c4f196b3ddc6b9846aa6baab29e4838e95be8897cd84f7ac4".to_string(),
+        "0".to_string(),
+        )
+     );
+
 
     Bootstrap {
         host: env_value.0,

@@ -1,9 +1,10 @@
 use crate::actors::transaction::{CreateTransaction, UpdateTransaction};
 use crate::actors::db::DBActor;
-use crate::actors::wallet::{GetByWallet, Update};
-use crate::utils::{response::{ZarynError, ZarynMessage},crypto};
+use crate::utils::{response::*,crypto::{encode}};
+use crate::models::wallet::{WalletInfo, Transfer};
+use crate::actors::wallet::{GetAllWallets, GetByWallet,Update, Create, Delete, Get, Detail };
 use actix::Addr;
-use actix_web::{HttpResponse, Result};
+use actix_web::{HttpResponse, Result,web::Json};
 use chrono::prelude::*;
 
 
@@ -46,6 +47,8 @@ async fn is_wallet_capable(
                         ))
                         .await;
 
+                       
+
                         return true;
                     }
                     Err(_) => {
@@ -66,7 +69,7 @@ async fn is_wallet_capable(
     balance
 }
 
-async fn transfer(
+pub async fn transfer(
     transaction_signature: String,
     wallet_address: String,
     amount: String,
@@ -87,7 +90,9 @@ async fn transfer(
                     ))
                     .await;
 
-                    return Ok(result)
+                    
+
+                    return Ok(result);
                 }
                 Err(error) => {
                     let _ = borrowed_db_state.send(UpdateTransaction::tranxaction(
@@ -105,7 +110,7 @@ async fn transfer(
     }
 }
 
-async fn update_wallet(
+pub async fn update_wallet(
     wallet_address: String,
     amount: String,
     db: Addr<DBActor>,
@@ -119,7 +124,7 @@ async fn update_wallet(
     }
 }
 
-pub async fn process_transfer(
+async fn process_transfer(
     sender_wallet_address: String,
     receiver_wallet_address: String,
     amount: String,
@@ -145,15 +150,15 @@ pub async fn process_transfer(
                                         &sender_wallet_address, 
                                         &Utc::today()
                                         );
-    let transaction_address = crypto::encode(&data_address).await;
-    let transaction_signature = crypto::encode(&transaction_info).await;
+    let transaction_address = encode(&data_address).await;
+    let transaction_signature = encode(&transaction_info).await;
 
     if is_wallet_capable(
         sender_wallet.to_string(),
         receiver_wallet.to_string(),
         transaction_address.to_string(),
         transaction_signature.to_string(),
-        "Withdraw".to_string(),
+        "Peer_2_Peer_Transfer".to_string(),
         transfer_amount.parse().unwrap_or_default(),
         borrowed_db_state,
     )
@@ -166,6 +171,9 @@ pub async fn process_transfer(
             db,
         )
         .await
+
+
+
     } else {
         let _ = db.clone().send(UpdateTransaction::tranxaction(
             transaction_signature.clone().to_string(),
@@ -175,3 +183,87 @@ pub async fn process_transfer(
         Err(ZarynError::NotEnoughBalance)
     }
 }
+
+pub async fn create_user_wallet(wallet_info: Json<WalletInfo>, db:Addr<DBActor>) -> Result<HttpResponse, ZarynError> {
+    let new_secure_wallet_signature = encode(&wallet_info.wallet_signature.to_string()).await;
+    let new_secure_public_key = encode(&wallet_info.public_key.to_string()).await;
+    let new_secure_address = encode(&wallet_info.wallet_address.to_string()).await;
+    match db.send(
+        Get::this(
+        new_secure_address.to_string(),
+        new_secure_public_key.to_string(),
+        new_secure_wallet_signature.to_string(),
+        )
+     ).await {
+         Ok(Ok(_)) => Err(ZarynError::ErrorDuplicateWalletFound),
+         Ok(Err(_)) => match db.send(
+            Create::this(
+            new_secure_address,
+            new_secure_wallet_signature,
+            new_secure_public_key,
+            "0".to_string(),
+            )
+         ).await {
+            Ok(Ok(data)) => Ok(ZarynWalletResponse::success(true, Some(data), "Wallet Created Successfully".to_string())),
+            _ => Err(ZarynError::InternalError)
+        },
+         Err(_) => Err(ZarynError::InternalError)  
+     } 
+}
+
+pub async fn fetch_all_wallets(db:Addr<DBActor>) -> Result<HttpResponse, ZarynError> {
+    match db.send(GetAllWallets).await {
+        Ok(Ok(data)) => Ok(ListZarynWalletResponse::success(true, Some(data), Some("All Wallets".to_string()))),
+        _ => Err(ZarynError::InternalError)
+    }
+}
+
+pub async fn fetch_wallet_info(public_key: String,db:Addr<DBActor>) -> Result<HttpResponse, ZarynError> {
+    let _key = encode(&public_key.to_string()).await;
+    match db.send(Detail::this(
+                      _key
+                    )).await {
+        Ok(Ok(data)) => Ok(ZarynWalletResponse::success(true, Some(data), "Wallet Details".to_string())),
+        _ => Err(ZarynError::WalletNotFound)
+    }
+}
+
+pub async fn do_transfer(transaction_info: Json<Transfer>, db:Addr<DBActor>) -> Result<HttpResponse, ZarynError> {
+    
+    let pri_key = encode(&transaction_info.sender_wallet_signature.clone()).await;
+    let pub_key = encode(&transaction_info.sender_public_key.clone()).await;
+    let sender_wallet = encode(&transaction_info.sender_wallet_address.clone()).await;
+    let receiver_wallet = encode(&transaction_info.receiver_wallet_address.clone()).await;
+
+    
+    // 
+    match db.clone()
+    .send(GetByWallet::this(sender_wallet.clone()))
+    .await
+    {
+        Ok(Ok(wallet)) => {
+            if wallet.wallet_signature.eq(&pri_key.to_string().clone()) && wallet.public_key.eq(&pub_key.to_string().clone())  {
+                match process_transfer(sender_wallet.clone(), receiver_wallet, transaction_info.amount.clone(), db).await {
+                    Ok(_) => Ok(ZarynMessage::success(true, "Transfer completed".to_string())),
+                    Err(e) => Err(e),
+                }
+            }else{
+                return Err(ZarynError::ValidationError {  field: "invalid authorization information".to_string() });
+            }
+            
+
+        },
+        Ok(Err(_)) => Err(ZarynError::WalletNotFound),
+        Err(_) => Err(ZarynError::WalletNotFound), 
+    }
+}
+
+pub async fn delete_this_wallet(wallet_address: String, db:Addr<DBActor>) -> Result<HttpResponse, ZarynError> {
+    let address = encode(&wallet_address).await;
+    match db.send(Delete::this(address)).await {
+        Ok(Ok(_)) => Ok(ZarynMessage::success(true,"Wallet Deleted Successfully".to_string())),
+        Ok(Err(_)) => Err(ZarynError::WalletNotFound),
+        _ => Err(ZarynError::InternalError)
+    }
+}
+

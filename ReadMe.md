@@ -58,7 +58,7 @@ A simple wallet for peer 2 peer crypto currency
     Send a put request to http://localhost:4000/v1/wallet as json request body and sender_wallet_address, receiver_wallet_address, sender_private_key, sender_public_key, amount  
     
     ```
-      curl -d '{ "sender_wallet_address": "user1", "receiver_wallet_address": "user2", "sender_private_key": "generated_key", "sender_public_key": "generated_key", "amount": "450"}' -H "Content-Type: application/json" -X PUT http://localhost:4000/v1/wallet/transfer
+      curl -d '{ "sender_wallet_address": "user1", "receiver_wallet_address": "user2", "sender_key": "generated_key", "sender_public_key": "generated_key", "amount": "450"}' -H "Content-Type: application/json" -X PUT http://localhost:4000/v1/wallet/transfer
     
     ```
 * Remove a wallet

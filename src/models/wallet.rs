@@ -9,7 +9,7 @@ use chrono::NaiveDateTime;
 pub struct Wallet {
     pub id: i32,
     pub wallet_address: String,
-    pub private_key: String,
+    pub wallet_signature: String,
     pub public_key: String,
     pub amount: String,
     pub wallet_value: String,
@@ -21,16 +21,16 @@ pub struct Wallet {
 #[table_name="wallets"]
 pub struct NewWallet {
     pub wallet_address: String,
-    pub private_key: String,
+    pub wallet_signature: String,
     pub public_key: String,
     pub amount: String,
     pub wallet_value: String,
 }
 impl NewWallet {
-   pub fn new(wallet_address: String, private_key: String, public_key: String, amount: String, wallet_value: String ) -> NewWallet {
+   pub fn new(wallet_address: String, wallet_signature: String, public_key: String, amount: String, wallet_value: String ) -> NewWallet {
       NewWallet {
           wallet_address,
-          private_key,
+          wallet_signature,
           public_key,
           amount,
           wallet_value
@@ -41,10 +41,8 @@ impl NewWallet {
 #[derive(Debug, Serialize, Deserialize, )]
 pub struct WalletInfo {
     pub wallet_address: String,
-    pub private_key: String,
+    pub wallet_signature: String,
     pub public_key: String,
-    pub amount: String,
-    pub user_wallet_value: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -57,7 +55,7 @@ pub struct BalanceInfo {
 pub struct Transfer {
     pub sender_wallet_address: String,
     pub receiver_wallet_address: String,
-    pub sender_private_key: String,
+    pub sender_wallet_signature: String,
     pub sender_public_key: String,
     pub amount: String,
 }

@@ -3,7 +3,7 @@
 CREATE TABLE wallets (
   id SERIAL PRIMARY KEY,
   wallet_address VARCHAR NOT NULL,
-  private_key VARCHAR NOT NULL,
+  wallet_signature VARCHAR NOT NULL,
   public_key VARCHAR NOT NULL,
   amount VARCHAR NOT NULL,
   wallet_value VARCHAR NOT NULL,

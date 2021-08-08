@@ -19,6 +19,7 @@ use actix_web::{App, HttpServer,  middleware::{Logger}, web};
 use models::state::AppState;
 use routes::wallet:: { get_wallets, create_wallet, update_wallet, get_wallet_info, delete_wallet};
 use routes::transactions:: { get_transactions, get_wallet_transactions, get_transaction_info  };
+use routes::stake::*;
 use routes::routes_state::*;
 use tracing::instrument;
 use utils::{config::boot};
@@ -31,7 +32,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
-            .wrap(Logger::new("%a %{authorization}i"))
+            .wrap(Logger::new("%a security token ==>%{authorization}i"))
             .service(health)
             .service(
                 web::scope("/v1/wallet")
@@ -45,6 +46,12 @@ async fn main() -> std::io::Result<()> {
                     .service(get_transactions)
                     .service(get_wallet_transactions)
                     .service(get_transaction_info),
+            ).service(
+                web::scope("/v1/stake")
+                    .service(get_stakes)
+                    .service(get_stake_info)
+                    .service(create_stake)
+                    .service(transfer_my_stake),
             )
             .default_service(
                 web::route().to(route_not_found), //
