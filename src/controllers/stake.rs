@@ -247,8 +247,8 @@ async fn transfer_stake(receiver_wallet:String, stake_signature:String, amount: 
         db.clone(),
     )
     .await {
-        Ok(result) => {
-                db.do_send(Update::this(this_isactive:'r#false', this_stake_signature:stake_signature));
+        Ok(_) => {
+                db.do_send(Update::this(false,stake_signature));
                 return Ok(
                     ZarynStakeResponse::success(
                         true,
